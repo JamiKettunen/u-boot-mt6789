@@ -9,6 +9,18 @@ config SYS_VENDOR
 choice
 	prompt "MediaTek board select"
 
+config TARGET_MT6789
+	bool "MediaTek MT6789 SoC"
+	select ARM64
+	select CPU
+	select REGMAP
+	select SYSCON
+	select MTK_SMC_JUMP
+	help
+	  The MediaTek MT6789 is a ARM64-based SoC with 2x Cortex-A76 and
+	  6x Cortex-A55 including UART, SPI, USB, SD/MMC cards, UFS 2.2,
+	  video encoding and LPDDR4x DRAM.
+
 config TARGET_MT6878
 	bool "MediaTek MT6878 SoC"
 	select ARM64

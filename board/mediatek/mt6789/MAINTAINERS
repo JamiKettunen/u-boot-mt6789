@@ -1,0 +1,6 @@
+MT8781
+M:	Alicja Michalska <ellyqw@mainlining.org>
+S:	Maintained
+F:	board/mediatek/mt8781
+F:	include/configs/mt8781.h
+F:	configs/mt8781_xelex_defconfig

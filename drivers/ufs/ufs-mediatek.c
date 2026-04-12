@@ -210,26 +210,26 @@ static int ufs_mtk_link_startup_notify(struct ufs_hba *hba,
 	return ret;
 }
 
-static int ufs_mtk_bind_mphy(struct ufs_hba *hba)
-{
-	struct ufs_mtk_host *host = dev_get_priv(hba->dev);
-	int err = 0;
-
-	err = generic_phy_get_by_index(hba->dev, 0, host->mphy);
-
-	if (IS_ERR(host->mphy)) {
-		err = PTR_ERR(host->mphy);
-		if (err != -ENODEV) {
-			dev_info(hba->dev, "%s: Could NOT get a valid PHY %d\n", __func__,
-				 err);
-		}
-	}
-
-	if (err)
-		host->mphy = NULL;
-
-	return err;
-}
+//static int ufs_mtk_bind_mphy(struct ufs_hba *hba)
+//{
+//	struct ufs_mtk_host *host = dev_get_priv(hba->dev);
+//	int err = 0;
+//
+//	err = generic_phy_get_by_index(hba->dev, 0, host->mphy);
+//
+//	if (IS_ERR(host->mphy)) {
+//		err = PTR_ERR(host->mphy);
+//		if (err != -ENODEV) {
+//			dev_info(hba->dev, "%s: Could NOT get a valid PHY %d\n", __func__,
+//				 err);
+//		}
+//	}
+//
+//	if (err)
+//		host->mphy = NULL;
+//
+//	return err;
+//}
 
 static void ufs_mtk_init_reset_control(struct ufs_hba *hba,
 				       struct reset_ctl **rc,
@@ -346,9 +346,9 @@ static int ufs_mtk_init(struct ufs_hba *hba)
 
 	priv->hba = hba;
 
-	err = ufs_mtk_bind_mphy(hba);
-	if (err)
-		return -ENODEV;
+//	err = ufs_mtk_bind_mphy(hba);
+//	if (err)
+//	return -ENODEV;
 
 	ufs_mtk_advertise_quirks(hba);
 
@@ -356,12 +356,12 @@ static int ufs_mtk_init(struct ufs_hba *hba)
 
 	// TODO: Clocks :)
 
-	err = generic_phy_power_on(priv->mphy);
-	if (err) {
-		dev_err(hba->dev, "%s: phy init failed, err = %d\n",
-			__func__, err);
-		return err;
-	}
+//	err = generic_phy_power_on(priv->mphy);
+//	if (err) {
+//		dev_err(hba->dev, "%s: phy init failed, err = %d\n",
+//			__func__, err);
+//		return err;
+//	}
 
 	ufs_mtk_setup_ref_clk(hba, true);
 	ufs_mtk_get_hw_ip_version(hba);
@@ -422,6 +422,8 @@ static int ufs_mtk_bind(struct udevice *dev)
 }
 
 static const struct udevice_id ufs_mtk_ids[] = {
+	{ .compatible = "mediatek,mt6789-ufshci" },
+	{ .compatible = "mediatek,mt6878-ufshci" },
 	{ .compatible = "mediatek,mt8183-ufshci" },
 	{},
 };

@@ -1,0 +1,552 @@
+// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/phy/phy.h>
+#include <dt-bindings/reset/ti-syscon.h>
+
+/ {
+	compatible = "mediatek,mt6789";
+	#address-cells = <2>;
+	#size-cells = <1>;
+
+	interrupt-parent = <&gic>;
+
+	// Clocks
+	clk32k: clock-32k {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32000>;
+		clock-output-names = "clk32k";
+	};
+
+	clk13m: clock-13m {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <13000000>;
+		clock-output-names = "clk13m";
+	};
+
+	clk26m: clock-26m {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <26000000>;
+		clock-output-names = "clk26m";
+	};
+
+	ulposc: clock-ulposc {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-freqency = <260000000>;
+		clock-output-names = "ulposc";
+	};
+
+	// CPU core topology
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x0>;
+			performance-domains = <&performance 0>;
+			enable-method = "psci";
+			capacity-dmips-mhz  = <383>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+			performance-domains = <&performance 0>;
+			enable-method = "psci";
+			capacity-dmips-mhz  = <383>;
+		};
+
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x200>;
+			performance-domains = <&performance 0>;
+			enable-method = "psci";
+			capacity-dmips-mhz  = <383>;
+		};
+
+		cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x300>;
+			performance-domains = <&performance 0>;
+			enable-method = "psci";
+			capacity-dmips-mhz  = <383>;
+		};
+
+		cpu4: cpu@4 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x400>;
+			performance-domains = <&performance 0>;
+			enable-method = "psci";
+			capacity-dmips-mhz  = <383>;
+		};
+
+		cpu5: cpu@5 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x500>;
+			performance-domains = <&performance 0>;
+			enable-method = "psci";
+			capacity-dmips-mhz  = <383>;
+		};
+
+		cpu6: cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x600>;
+			performance-domains = <&performance 1>;
+			enable-method = "psci";
+			capacity-dmips-mhz  = <1024>;
+		};
+
+		cpu7: cpu@101 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			reg = <0x700>;
+			performance-domains = <&performance 1>;
+			enable-method = "psci";
+			capacity-dmips-mhz  = <1024>;
+		};
+	};
+
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&cpu0>;
+				};
+				core1 {
+					cpu = <&cpu1>;
+				};
+				core2 {
+					cpu = <&cpu2>;
+				};
+				core3 {
+					cpu = <&cpu3>;
+				};
+				core4 {
+					cpu = <&cpu4>;
+				};
+				core5 {
+					cpu = <&cpu5>;
+				};
+			};
+			cluster1 {
+				core2 {
+					cpu = <&cpu6>;
+				};
+				core3 {
+					cpu = <&cpu7>;
+				};
+			};
+		};
+
+
+	pmu-a55 {
+		compatible = "arm,cortex-a55-pmu";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH &ppi_cluster0>;
+	};
+
+	pmu-a78 {
+		compatible = "arm,cortex-a76-pmu";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH &ppi_cluster1>;
+	};
+
+	pmu-dsu {
+		compatible = "arm,dsu-pmu";
+		cpus = <&cpu0>, <&cpu1>, <&cpu2>, <&cpu3>,
+		       <&cpu4>, <&cpu5>, <&cpu6>, <&cpu7>;
+		interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH 0>;
+	};
+
+	psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
+	soc: soc@0 {
+		compatible = "simple-bus";
+		ranges = <0x0 0x0 0x0 0x20000000>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		performance: performance-controller@11bc00 {
+			compatible = "mediatek,cpufreq-hw";
+			reg = <0x0011bc10 0x120>,
+			      <0x0011bd30 0x120>;
+			#performance-domain-cells = <1>;
+		};
+
+		gic: interrupt-controller@c000000 {
+			compatible = "arm,gic-v3";
+			reg = <0x0c000000 0x40000>,
+			      <0x0c040000 0x200000>;
+
+			#interrupt-cells = <4>;
+			interrupt-controller;
+			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH 0>;
+
+			ppi-partitions {
+				ppi_cluster0: interrupt-partition-0 {
+					affinity = <&cpu0 &cpu1 &cpu2 &cpu3 &cpu4 &cpu5>;
+				};
+				ppi_cluster1: interrupt-partition-1 {
+					affinity = <&cpu6 &cpu7>;
+				};
+			};
+		};
+
+		// Syscons
+		topckgen: syscon@10000000 {
+			compatible = "mediatek,mt6789-topckgen",
+			   "mediatek,mt8781-topckgen", "syscon";
+			reg = <0x10000000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		infracfg_ao: syscon@10001000 {
+			compatible = "mediatek,mt6789-infracfg_ao",
+			   "mediatek,mt8781-infracfg_ao", "syscon";
+			reg = <0x10001000 0x1000>;
+			#clock-cells = <1>;
+
+			ufs_rst: reset-controller {
+				compatible = "ti,syscon-reset";
+				#reset-cells = <1>;
+
+				ti,reset-bits =
+				< 0x120 0 0x124 0 0 0 (ASSERT_SET | DEASSERT_SET | STATUS_NONE) /* lvts_ap */
+				/* ufs reset */
+				0x130 15 0x134 15 0 0 (ASSERT_SET | DEASSERT_SET | STATUS_NONE) /* 1: ufshci */
+				0x140  7 0x144  7 0 0 (ASSERT_SET | DEASSERT_SET | STATUS_NONE) /* 2: unipro */
+				0x150 21 0x154 21 0 0 (ASSERT_SET | DEASSERT_SET | STATUS_NONE) /* 3: ufs-crypto */
+				>;
+			};
+		};
+
+		apmixedsys: syscon@1000c000 {
+			compatible = "mediatek,mt6789-apmixedsys",
+			   "mediatek,mt8187-apmixedsys", "syscon";
+			reg = <0x1000c000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		pericfg_ao: syscon@10003000 {
+			compatible = "mediatek,mt6789-pericfg-ao", 
+			   "mediatek,mt8781-pericfg-ao", "syscon";
+			reg = <0x10003000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		afe: syscon@11210000 {
+			compatible = "mediatek,mt6789-afe",
+			   "mediatek,mt8781-afe", "syscon";
+			reg = <0x11210000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		mfg: syscon@13fbf000 {
+			compatible = "mediatek,mt6789-mfg",
+			   "mediatek,mt8781-mfg", "syscon";
+			reg = <0x11210000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		mmsys: syscon@14000000 {
+			compatible = "mediatek,mt6789-mmsys",
+			   "mediatek,mt8781-mmsys", "syscon";
+			reg = <0x14000000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		imp_iic_wrap_c: syscon@1101b000 {
+			compatible = "mediatek,mt6789-imp_iic_wrap_c",
+			   "mediatek,mt8781-imp_iic_wrap_c", "syscon";
+			reg = <0x1101b000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		imp_iic_wrap_w: syscon@11e02000 {
+			compatible = "mediatek,mt6789-imp_iic_wrap_w",
+			   "mediatek,mt8781-imp_iic_wrap_w", "syscon";
+			reg = <0x11e02000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		imp_iic_wrap_en: syscon@11eb4000 {
+			compatible = "mediatek,mt6789-imp_iic_wrap_en", 
+			   "mediatek,mt8781-imp_iic_wrap_en", "syscon";
+			reg = <0x11eb4000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		imp_iic_wrap_n: syscon@11f01000 {
+			compatible = "mediatek,mt6789-imp_iic_wrap_n",
+			"mediatek,mt8781-imp_iic_wrap_n", "syscon";
+			reg = <0x11f01000 0x1000>;
+			#clock-cells = <1>;
+		};
+
+		pio: pinctrl {
+			compatible = "mediatek,mt6789-pinctrl", "mediatek,mt8781-pinctrl";
+			reg =  <0x10005000 0x1000>,
+			       <0x11c30000 0x1000>,
+			       <0x11d10000 0x1000>,
+			       <0x11d40000 0x1000>,
+			       <0x11e20000 0x1000>,
+			       <0x11e60000 0x1000>,
+			       <0x11ea0000 0x1000>;
+			reg-names = "gpio",
+				    "iocfg_rb",
+				    "iocfg_bm",
+				    "iocfg_br",
+				    "iocfg_lm",
+				    "iocfg_bl",
+				    "iocfg_rt";
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&pio 0 0 188>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 239 IRQ_TYPE_LEVEL_HIGH 0>;
+		};
+
+		uart0: serial@11002000 {
+			compatible = "mediatek,mt6577-uart";
+			reg = <0x11002000 0x1000>;
+			interrupts = <GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH 0>;
+			clocks = <&clk26m>, <&clk26m>;
+			clock-names = "baud", "bus";
+			status = "disabled";
+		};
+
+		uart1: serial@11003000 {
+			compatible = "mediatek,mt6577-uart";
+			reg = <0x11003000 0x1000>;
+			interrupts = <GIC_SPI 398 IRQ_TYPE_LEVEL_HIGH 0>;
+			//clocks = <&clk26m>, <&pericfg_ao CLK_PERAOP_UART1>;
+			clock-names = "baud", "bus";
+			status = "disabled";
+		};
+
+		usb: usb0@11200000 {
+			compatible = "mediatek,mt8518-musb", "mediatek,mtk-musb";
+			reg = <0 0x11200000 0 0x10000>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL_HIGH 0>;
+			interrupt-names = "mc";
+			phys = <&u2port0 PHY_TYPE_USB2>;
+			clocks = <&clk26m>, <&clk26m>, <&clk26m>;
+			clock-names = "main", "mcu", "univpll";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges;
+			status = "disabled";
+		};
+
+		u2phy: t-phy@11f40000 {
+			compatible = "mediatek,generic-tphy-v2";
+			reg = <0 0x11f40000 0 0x1000>;
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges;
+			status = "okay";
+
+			u2port0: usb-phy@0 {
+				reg = <0 0x700>;
+				clocks = <&clk26m>;
+				clock-names = "ref";
+				#phy-cells = <1>;
+				status = "okay";
+				mediatek,eye-src = <4>;
+				mediatek,eye-vrt = <4>;
+				mediatek,eye-term = <4>;
+				mediatek,discth = <7>;
+			};
+		};
+
+		sdhc2: mmc@11240000 {
+			compatible = "mediatek,mt8183-mmc";
+			reg = <0x11240000 0x1000>,
+				  <0x11ef0000 0x1000>;
+			//clocks = ;
+			interrupts = <GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH 0>;
+		};
+
+		ufshci: ufshci@11270000 {
+			compatible = "mediatek,mt6789-ufshci";
+			reg = <0x11270000 0x2300>;
+			interrupts = <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH 0>;
+
+			/*
+			clocks = <&infracfg_ao_clk CLK_IFRAO_UFS>,
+				<&infracfg_ao_clk CLK_IFRAO_UFS_SAP_BCLK>,
+				<&infracfg_ao_clk CLK_IFRAO_UNIPRO_TICK>,
+				<&infracfg_ao_clk CLK_IFRAO_UNIPRO_SYSCLK>,
+				<&infracfg_ao_clk CLK_IFRAO_UFS_AES>,
+				<&topckgen_clk CLK_TOP_AES_UFSFDE_SEL>,
+				<&topckgen_clk CLK_TOP_UFS_SEL>;
+			*/
+			clock-names =
+				"ufs",
+				"ufs_mp",
+				"unipro_tck",
+				"unipro_sys",
+				"ufshci_aes",
+				"ufsfde_ck",
+				"ufs_ck";
+
+			freq-table-hz =
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>;
+
+			resets = <&ufs_rst 1>, <&ufs_rst 2>, <&ufs_rst 3>;
+			reset-names = "hci_rst", "unipro_rst", "crypto_rst";
+
+			status = "disabled";
+		};
+
+		i2c0: i2c@11e00000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11e00000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c1: i2c@11e01000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11e01000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c2: i2c@11eb0000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11eb0000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c3: i2c@11015000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11015000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 147 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c4: i2c@11eb1000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11eb1000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 148 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c5: i2c@11017000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11017000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c6: i2c@1101a000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x1101a000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 150 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c7: i2c@11f00000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11f00000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 151 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c8: i2c@11eb2000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11eb2000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		i2c9: i2c@11eb3000 {
+			compatible = "mediatek,mt6789-i2c", "mediatek,mt8781-i2c";
+			reg = <0x11eb3000 0x1000>,
+			      <0x10217080 0x80>;
+			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH 0>;
+			clock-names = "main", "dma";
+			clock-div = <1>;
+		};
+
+		watchdog: watchdog@10007000 {
+			compatible = "mediatek,mt8781-wdt",
+				     "mediatek,mt6589-wdt",
+				     "syscon";
+			reg = <0x10007000 0x100>;
+
+			reboot-mode {
+				compatible = "syscon-reboot-mode";
+				offset = <0x24>;
+				mask = <0xf>;
+				mode-charger = <0x1>;
+				mode-recovery = <0x2>;
+				mode-bootloader = <0x3>;
+				mode-dm-verity-dev-corrupt = <0x4>;
+				mode-kpoc = <0x5>;
+				mode-ddr-reserve = <0x6>;
+				mode-meta = <0x7>;
+				mode-rpmbpk = <0x8>;
+			};
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW 0>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW 0>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW 0>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW 0>;
+	};
+};
